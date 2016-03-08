@@ -7,25 +7,25 @@ defmodule Verk.Queue do
   @doc """
   Counts how many jobs are enqueued on a queue
   """
-  @spec count(binary) :: integer
-  def count(queue) do
-    Redix.command!(Verk.Redis, ["LLEN", queue_name(queue)])
+  @spec count(String.t, GenServer.server) :: integer
+  def count(queue, redis \\ Verk.Redis) do
+    Redix.command!(redis, ["LLEN", queue_name(queue)])
   end
 
   @doc """
   Clears the `queue`
   """
-  @spec clear(binary) :: boolean
-  def clear(queue) do
-    Redix.command!(Verk.Redis, ["DEL", queue_name(queue)]) == 1
+  @spec clear(String.t, GenServer.server) :: boolean
+  def clear(queue, redis \\ Verk.Redis) do
+    Redix.command!(redis, ["DEL", queue_name(queue)]) == 1
   end
 
   @doc """
   Lists enqueued jobs from `start` to `stop`
   """
-  @spec range(binary, integer, integer) :: [Verk.Job.T]
-  def range(queue, start \\ 0, stop \\ -1) do
-    for job <- Redix.command!(Verk.Redis, ["LRANGE", queue_name(queue), start, stop]) do
+  @spec range(String.t, integer, integer, GenServer.server) :: [Verk.Job.T]
+  def range(queue, start \\ 0, stop \\ -1, redis) do
+    for job <- Redix.command!(redis, ["LRANGE", queue_name(queue), start, stop]) do
       Job.decode!(job)
     end
   end
@@ -33,12 +33,12 @@ defmodule Verk.Queue do
   @doc """
   Deletes the job from the queue
   """
-  @spec delete_job(binary, %Job{} | binary) :: boolean
-  def delete_job(queue, %Job{ original_json: original_json }) do
-    Redix.command!(Verk.Redis, ["LREM", queue_name(queue), 1, original_json]) == 1
+  @spec delete_job(String.t, %Job{} | String.t, GenServer.server) :: boolean
+  def delete_job(queue, %Job{ original_json: original_json }, redis) do
+    Redix.command!(redis, ["LREM", queue_name(queue), 1, original_json]) == 1
   end
-  def delete_job(queue, original_json) do
-    Redix.command!(Verk.Redis, ["LREM", queue_name(queue), 1, original_json]) == 1
+  def delete_job(queue, original_json, redis) do
+    Redix.command!(redis, ["LREM", queue_name(queue), 1, original_json]) == 1
   end
 
   defp queue_name(queue), do: "queue:#{queue}"
