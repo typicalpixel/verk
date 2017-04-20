@@ -9,11 +9,11 @@ defmodule Verk.DslTest do
     end
   end
 
-  def ok, do: :ok
+  def ok(), do: :ok
 
   describe "bagify/1" do
     test "with no error" do
-      assert bangify(ok) == nil
+      assert bangify(ok()) == nil
       assert bangify(incr(2)) == 3
     end
 
